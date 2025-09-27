@@ -41,7 +41,7 @@ class Actor(models.Model):
 
 def movie_image_file_path(instance, filename) -> object:
     _, extension = os.path.splitext(filename)
-    filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
+    filename = f"{slugify(instance.title)}-{str(uuid.uuid4())}{extension}"
 
     return os.path.join("uploads/movies/", filename)
 
@@ -120,14 +120,14 @@ class Ticket(models.Model):
             if not (1 <= ticket_attr_value <= count_attrs):
                 raise error_to_raise(
                     {
-                        ticket_attr_name: f"{ticket_attr_name} "
-                        f"number must be in available range: "
-                        f"(1, {cinema_hall_attr_name}): "
-                        f"(1, {count_attrs})"
+                        ticket_attr_name: f"{ticket_attr_name.capitalize()} "
+                                          f"number must be between 1 and {count_attrs}"
                     }
                 )
 
     def clean(self) -> None:
+        if not self.movie_session:
+            raise ValidationError("Movie session must be set before cleaning")
         Ticket.validate_ticket(
             self.row,
             self.seat,
@@ -136,16 +136,20 @@ class Ticket(models.Model):
         )
 
     def save(
-        self,
-        *args,
-        force_insert=False,
-        force_update=False,
-        using=None,
-        update_fields=None,
+            self,
+            *args,
+            force_insert=False,
+            force_update=False,
+            using=None,
+            update_fields=None,
     ) -> None:
         self.full_clean()
         return super(Ticket, self).save(
-            force_insert, force_update, using, update_fields
+            *args,
+            force_insert=force_insert,
+            force_update=force_update,
+            using=using,
+            update_fields=update_fields,
         )
 
     def __str__(self) -> str:
