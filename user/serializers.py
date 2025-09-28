@@ -5,6 +5,8 @@ from django.contrib.auth import (
 from rest_framework import serializers
 from django.utils.translation import gettext as _
 
+from user.models import User
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Create a new user with encrypted password and return it"""
         return get_user_model().objects.create_user(**validated_data)
 
-    def update(self, instance, validated_data) -> object:
+    def update(self, instance, validated_data) -> User:
         """Update a user, set the password correctly and return it"""
         password = validated_data.pop("password", None)
         user = super().update(instance, validated_data)

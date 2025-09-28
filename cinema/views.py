@@ -29,6 +29,7 @@ from cinema.models import (
     MovieSession,
     Order,
 )
+from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -80,7 +81,7 @@ class MovieViewSet(
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
 
-    def get_permissions(self):
+    def get_permissions(self) -> object:
         if self.action == "create":
             return [IsAdminUser()]
         return [AllowAny()]
@@ -90,7 +91,7 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
-    def get_queryset(self) -> object:
+    def get_queryset(self) -> QuerySet:
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
@@ -111,7 +112,7 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self) -> object:
+    def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
 
@@ -143,19 +144,30 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "str_parameter",
+                name="title",
                 type=str,
-                description="First additional parameter…",
+                description="Filter movies by title (case-insensitive)",
                 required=False,
             ),
             OpenApiParameter(
-                "list_parameter",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Second additional parameter …"
-            )
+                name="genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                style="form",
+                explode=False,
+                description="Filter by genre IDs (comma-separated, e.g. ?genres=1,2,3)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                style="form",
+                explode=False,
+                description="Filter by actor IDs (comma-separated, e.g. ?actors=1,2,3)",
+                required=False,
+            ),
         ]
     )
-    def list(self, request, *args, **kwargs) -> object:
+    def list(self, request, *args, **kwargs) -> Response:
         return super().list(request, *args, **kwargs)
 
 
@@ -171,6 +183,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
+    permission_classes = [IsAdminOrIfAuthenticatedReadOnly]
 
     def get_queryset(self) -> QuerySet:
         date = self.request.query_params.get("date")
@@ -187,7 +200,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self) -> object:
+    def get_serializer_class(self):
         if self.action == "list":
             return MovieSessionListSerializer
 
@@ -195,6 +208,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                description="Filter sessions by date (YYYY-MM-DD)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=int,
+                description="Filter sessions by movie ID",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
@@ -212,11 +244,12 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
+    permission_classes = [IsAdminOrIfAuthenticatedReadOnly]
 
-    def get_queryset(self) -> object:
+    def get_queryset(self) -> QuerySet:
         return Order.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self) -> object:
+    def get_serializer_class(self):
         if self.action == "list":
             return OrderListSerializer
 

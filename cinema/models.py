@@ -16,30 +16,30 @@ class CinemaHall(models.Model):
     def capacity(self) -> int:
         return self.rows * self.seats_in_row
 
-    def __str__(self) -> object:
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)
 
 
 class Genre(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    def __str__(self) -> object:
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)
 
 
 class Actor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
 
-    def __str__(self) -> object:
-        return self.first_name + " " + self.last_name
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"
 
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
 
-def movie_image_file_path(instance, filename) -> object:
+def movie_image_file_path(instance, filename) -> str:
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{str(uuid.uuid4())}{extension}"
 
@@ -57,8 +57,8 @@ class Movie(models.Model):
     class Meta:
         ordering = ["title"]
 
-    def __str__(self) -> object:
-        return self.title
+    def __str__(self) -> str:
+        return str(self.title)
 
 
 class MovieSession(models.Model):

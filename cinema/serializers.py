@@ -1,3 +1,4 @@
+from typing import Any
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -122,7 +123,7 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    def validate(self, attrs) -> dict:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         data = super().validate(attrs)
 
         if "movie_session" in attrs:
@@ -168,7 +169,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ("id", "tickets", "created_at")
 
-    def create(self, validated_data) -> object:
+    def create(self, validated_data) -> Order:
         with transaction.atomic():
             tickets_data = validated_data.pop("tickets")
             order = Order.objects.create(**validated_data)
